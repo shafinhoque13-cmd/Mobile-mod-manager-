@@ -5,45 +5,66 @@ using UnityEngine;
 
 namespace MobileConfigManager
 {
-    [BepInPlugin("com.shafin.universal.config", "Mobile Config Manager", "1.1.0")]
+    [BepInPlugin("com.shafin.universal.config", "Mobile Config Manager", "1.3.1")]
     public class Plugin : BaseUnityPlugin
     {
         private bool _showMenu = false;
         private Vector2 _scrollPos;
-        // Medium size window for settings list
-        private Rect _winRect = new Rect(50, 50, 600, 700); 
+        private Rect _winRect = new Rect(50, 50, 600, 750); 
+
+        void Awake()
+        {
+            Logger.LogInfo("!!! MOBILE CONFIG MANAGER AWAKE !!!");
+        }
 
         void OnGUI()
         {
-            float scale = Screen.width / 1920f;
+            // Forces the menu to the front
+            GUI.depth = -1001; 
+
+            float scale = Screen.height / 1080f;
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1));
 
-            // Small Toggle Button to open the manager
-            if (GUI.Button(new Rect(Screen.width - 250, 20, 200, 80), "MODS")) _showMenu = !_showMenu;
+            // Small button in the top right to open/close
+            if (GUI.Button(new Rect(Screen.width / scale - 220, 20, 200, 80), "MOD SETTINGS")) 
+            {
+                _showMenu = !_showMenu;
+            }
 
             if (_showMenu)
             {
-                _winRect = GUI.Window(1, _winRect, DrawManager, "Mod Manager (Drag Me)");
+                _winRect = GUI.Window(1, _winRect, DrawManager, "Mod Manager (Drag Handle Top)");
             }
         }
 
         void DrawManager(int windowID)
         {
-            GUI.DragWindow(new Rect(0, 0, 10000, 60)); // Drag handle at top
+            // Make the window draggable
+            GUI.DragWindow(new Rect(0, 0, 10000, 60));
 
             GUILayout.BeginVertical();
-            _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(500));
+            _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(600));
 
-            foreach (var plugin in Chainloader.PluginInfos.Values)
+            // Automatically list all loaded mods and their settings
+            foreach (var pluginInfo in Chainloader.PluginInfos.Values)
             {
-                GUILayout.Label($"<b>{plugin.Metadata.Name}</b>");
-                foreach (var key in plugin.Instance.Config.Keys)
+                GUILayout.Space(10);
+                GUILayout.Label($"<b><color=yellow>[ {pluginInfo.Metadata.Name} ]</color></b>");
+                
+                foreach (var configKey in pluginInfo.Instance.Config.Keys)
                 {
-                    var entry = plugin.Instance.Config[key];
+                    var entry = pluginInfo.Instance.Config[configKey];
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(entry.Definition.Key, GUILayout.Width(300));
+                    GUILayout.Label(entry.Definition.Key, GUILayout.Width(350));
+                    
                     if (entry.SettingType == typeof(bool))
+                    {
                         entry.BoxedValue = GUILayout.Toggle((bool)entry.BoxedValue, "");
+                    }
+                    else
+                    {
+                        GUILayout.Label(entry.BoxedValue.ToString(), GUILayout.Width(100));
+                    }
                     GUILayout.EndHorizontal();
                 }
             }
@@ -52,7 +73,7 @@ namespace MobileConfigManager
             if (GUILayout.Button("CLOSE", GUILayout.Height(80))) _showMenu = false;
             GUILayout.EndVertical();
 
-            GUI.DragWindow(); // Allow dragging from empty spaces
+            GUI.DragWindow();
         }
     }
 }
