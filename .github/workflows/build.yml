@@ -1,0 +1,30 @@
+name: Build Mobile Config Manager
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Build Universal Manager
+      # This command finds your .csproj and builds the Release version
+      run: dotnet build MobileConfigManager.csproj --configuration Release
+
+    - name: Upload Manager DLL
+      uses: actions/upload-artifact@v4
+      with:
+        name: MobileConfigManager-DLL
+        path: bin/Release/net472/MobileConfigManager.dll
+        
