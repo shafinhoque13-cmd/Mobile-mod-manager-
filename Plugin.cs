@@ -1,78 +1,50 @@
 using BepInEx;
-using BepInEx.Configuration;
 using BepInEx.Bootstrap;
 using UnityEngine;
 
 namespace MobileConfigManager
 {
-    [BepInPlugin("com.shafin.universal.config", "Mobile Config Manager", "1.4.1")]
+    [BepInPlugin("com.shafin.universal.config", "MobileConfigManager", "1.4.4")]
     public class Plugin : BaseUnityPlugin
     {
-        private bool _showMenu = false;
-        private Vector2 _scrollPos;
-        private Rect _winRect = new Rect(50, 50, 600, 750); 
-
-        void Awake()
-        {
-            Logger.LogInfo("!!! MOBILE CONFIG MANAGER v1.4.1 READY !!!");
-        }
+        private bool _show = false;
+        private Rect _winRect = new Rect(300, 100, 500, 600);
+        private Vector2 _scroll;
+        private bool _dragging = false;
+        private Vector2 _lastMouse;
 
         void OnGUI()
         {
-            // Forces the menu to stay on top
-            GUI.depth = -1001; 
+            GUI.depth = -1001;
+            float s = Screen.height / 1080f;
+            GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(s, s, 1));
 
-            float scale = Screen.height / 1080f;
-            GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1));
+            if (GUI.Button(new Rect(Screen.width/s - 210, 10, 200, 60), "SETTINGS")) _show = !_show;
 
-            // Floating Toggle Button
-            if (GUI.Button(new Rect(Screen.width / scale - 220, 20, 200, 80), "MOD SETTINGS")) 
-            {
-                _showMenu = !_showMenu;
-            }
+            if (!_show) return;
 
-            if (_showMenu)
-            {
-                _winRect = GUI.Window(1, _winRect, DrawManager, "Mod Manager (Drag Top)");
-            }
-        }
+            // Drag Logic
+            Vector2 mouse = new Vector2(Input.mousePosition.x / s, (Screen.height - Input.mousePosition.y) / s);
+            if (Input.GetMouseButtonDown(0) && new Rect(_winRect.x, _winRect.y, _winRect.width, 50).Contains(mouse)) _dragging = true;
+            if (_dragging && Input.GetMouseButton(0)) _winRect.position += (mouse - _lastMouse);
+            if (Input.GetMouseButtonUp(0)) _dragging = false;
+            _lastMouse = mouse;
 
-        void DrawManager(int windowID)
-        {
-            GUI.DragWindow(new Rect(0, 0, 10000, 60));
-
-            GUILayout.BeginVertical();
-            _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(600));
-
-            foreach (var pluginInfo in Chainloader.PluginInfos.Values)
-            {
-                GUILayout.Space(10);
-                GUILayout.Label($"<b><color=yellow>[ {pluginInfo.Metadata.Name} ]</color></b>");
-                
-                foreach (var configKey in pluginInfo.Instance.Config.Keys)
+            _winRect = GUI.Window(1, _winRect, (id) => {
+                _scroll = GUILayout.BeginScrollView(_scroll);
+                foreach (var p in Chainloader.PluginInfos.Values)
                 {
-                    var entry = pluginInfo.Instance.Config[configKey];
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label(entry.Definition.Key, GUILayout.Width(350));
-                    
-                    if (entry.SettingType == typeof(bool))
+                    GUILayout.Label($"<b>{p.Metadata.Name}</b>");
+                    foreach (var key in p.Instance.Config.Keys)
                     {
-                        entry.BoxedValue = GUILayout.Toggle((bool)entry.BoxedValue, "");
+                        var entry = p.Instance.Config[key];
+                        if (entry.SettingType == typeof(bool))
+                            entry.BoxedValue = GUILayout.Toggle((bool)entry.BoxedValue, $" {entry.Definition.Key}");
                     }
-                    else
-                    {
-                        // Safely display non-boolean values as text
-                        GUILayout.Label(entry.BoxedValue.ToString(), GUILayout.Width(100));
-                    }
-                    GUILayout.EndHorizontal();
                 }
-            }
-
-            GUILayout.EndScrollView();
-            if (GUILayout.Button("CLOSE", GUILayout.Height(80))) _showMenu = false;
-            GUILayout.EndVertical();
-
-            GUI.DragWindow();
+                GUILayout.EndScrollView();
+                if (GUILayout.Button("CLOSE", GUILayout.Height(50))) _show = false;
+            }, "Mod Settings");
         }
     }
 }
