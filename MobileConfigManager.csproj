@@ -1,13 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <AssemblyName>MobileUnifiedManager</AssemblyName>
-    <Version>1.5.0</Version>
+    <AssemblyName>MobileConfigManager</AssemblyName>
+    <Version>1.5.1</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="BepInEx"><HintPath>libs\BepInEx.dll</HintPath></Reference>
+    
     <Reference Include="UnityEngine"><HintPath>libs\UnityEngine.dll</HintPath></Reference>
     <Reference Include="UnityEngine.CoreModule"><HintPath>libs\UnityEngine.CoreModule.dll</HintPath></Reference>
     <Reference Include="UnityEngine.IMGUIModule"><HintPath>libs\UnityEngine.IMGUIModule.dll</HintPath></Reference>
